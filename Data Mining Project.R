@@ -3,14 +3,19 @@
 #install.packages("corrplot")
 #install.packages("ggplot2")
 #install.packages("GGally")
+#install.packages("psych")
+#install.packages("knitr")
 library(splitTools)
 library(corrplot)
 library(ggplot2)
 library(GGally)
+library(psych)
+library(knitr)
 
 ##Import data
 data <- read.csv('https://raw.githubusercontent.com/FanxiuB/Data-Mining-Project/main/DM-group_12.csv')
 dim(data)
+class(data)
 
 ##Split data
 set.seed(2023)
@@ -40,57 +45,68 @@ barplot(table(train_cate$day_of_week))
 pie(table(train_cate$poutcome))
 
 #ggplot2
+table(train_cate$y) # %>% kable() #Add this part when transferring to RMarkdown
 y.freq <- table(train_cate$y)
 y.freq <- as.data.frame(y.freq)
 colnames(y.freq) <- c("y", "number")
 ggplot(data = y.freq, mapping = aes(x = y, y = number, fill=y)) +
   geom_col()
 
+table(train_cate$job)
 job.y <- as.data.frame(table(train_cate$y, train_cate$job))
 colnames(job.y) <- c("y","job","number")
 ggplot(data = job.y, mapping = aes(x = job, y = number, fill=y)) +
   geom_col()
 
+table(train_cate$marital)
 marital.y <- as.data.frame(table(train_cate$y, train_cate$marital))
 colnames(marital.y) <- c("y","marital","number")
 ggplot(data = marital.y, mapping = aes(x = marital, y = number, fill=y)) +
   geom_col()
 
+table(train_cate$education)
 education.y <- as.data.frame(table(train_cate$y, train_cate$education))
 colnames(education.y) <- c("y","education","number")
 ggplot(data = education.y, mapping = aes(x = education, y = number, fill=y)) +
   geom_col()
 
+table(train_cate$default)
 default.y <- as.data.frame(table(train_cate$y, train_cate$default))
 colnames(default.y) <- c("y","default","number")
 ggplot(data = default.y, mapping = aes(x = default, y = number, fill=y)) +
   geom_col()
 
+table(train_cate$housing)
 housing.y <- as.data.frame(table(train_cate$y, train_cate$housing))
 colnames(housing.y) <- c("y","housing","number")
 ggplot(data = housing.y, mapping = aes(x = housing, y = number, fill=y)) +
   geom_col()
 
+table(train_cate$loan)
 loan.y <- as.data.frame(table(train_cate$y, train_cate$loan))
 colnames(loan.y) <- c("y","loan","number")
 ggplot(data = loan.y, mapping = aes(x = loan, y = number, fill=y)) +
   geom_col()
 
+table(train_cate$contact)
 contact.y <- as.data.frame(table(train_cate$y, train_cate$contact))
 colnames(contact.y) <- c("y","contact","number")
 ggplot(data = contact.y, mapping = aes(x = contact, y = number, fill=y)) +
   geom_col()
 
+table(train_cate$month)
 month.y <- as.data.frame(table(train_cate$y, train_cate$month))
 colnames(month.y) <- c("y","month","number")
 ggplot(data = month.y, mapping = aes(x = month, y = number, fill=y)) +
   geom_col()
 
+table(train_cate$day_of_week)
 day_of_week.y <- as.data.frame(table(train_cate$y, train_cate$day_of_week))
 colnames(day_of_week.y) <- c("y","day_of_week","number")
 ggplot(data = day_of_week.y, mapping = aes(x = day_of_week, y = number, fill=y)) +
   geom_col()
 
+table(train_cate$poutcome)
 poutcome.y <- as.data.frame(table(train_cate$y, train_cate$poutcome))
 colnames(poutcome.y) <- c("y","poutcome","number")
 ggplot(data = poutcome.y, mapping = aes(x = poutcome, y = number, fill=y)) +
@@ -98,7 +114,9 @@ ggplot(data = poutcome.y, mapping = aes(x = poutcome, y = number, fill=y)) +
 
 
 #Numerical Variables
-boxplot(train_num)
+describe(train_num[,-11])
+
+boxplot(train_num[,-11])
 
 ggplot(data = train_num, mapping = aes(x = age, fill=y)) +
   geom_histogram(bins = 60, color = "white")
@@ -171,12 +189,16 @@ ggplot(data = train_num, aes(x = y, y = nr.employed, fill = y)) +
   theme(legend.position = "none")
 
 #Correlation between numerical variables
-corr <- cor(train_num[,-11])
-corrplot(corr, tl.col='black', type='upper')
+corr <- cor(train_num[,-11], method="pearson")
+corrplot(corr, method='ellipse',
+         tl.col='black', type='upper',
+         tl.cex = 0.9, tl.srt = 45, tl.pos = "lt")
+corrplot(corr, method = "number", type = "lower",
+         tl.col = "n", tl.cex = 0.9, tl.pos = "n",
+         add = T)
 
 ggpairs(train_num)
 ggpairs(train_cate)
-
 
 
 
