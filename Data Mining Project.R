@@ -7,7 +7,7 @@ library(corrplot)
 library(ggplot2)
 
 ##Import data
-data <- read.csv("DM - group_12.csv")
+data <- read.csv('https://raw.githubusercontent.com/FanxiuB/Data-Mining-Project/main/DM-group_12.csv')
 dim(data)
 
 ##Split data
