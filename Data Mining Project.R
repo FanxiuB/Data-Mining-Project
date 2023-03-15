@@ -44,7 +44,7 @@ barplot(table(train_cate$month))
 barplot(table(train_cate$day_of_week))
 pie(table(train_cate$poutcome))
 
-#ggplot2
+#ggplot2 barplots of Y and all the categorical variables
 table(train_cate$y) # %>% kable() #Add this part when transferring to RMarkdown
 y.freq <- table(train_cate$y)
 y.freq <- as.data.frame(y.freq)
@@ -113,7 +113,7 @@ ggplot(data = poutcome.y, mapping = aes(x = poutcome, y = number, fill=y)) +
   geom_col()
 
 
-#Numerical Variables
+#EDA of Numerical Variables
 describe(train_num[,-11])
 
 boxplot(train_num[,-11])
