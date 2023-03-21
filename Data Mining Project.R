@@ -40,6 +40,7 @@ for(i in 1:10000){
 data$y <- as.numeric(data$y)
 class(data$y)
 str(data)
+
 ##Split data
 set.seed(2023)
 split <- partition(data$age, p = c(train = 0.6, valid = 0.2, test = 0.2))
@@ -222,24 +223,6 @@ corrplot(corr, method = "number", type = "lower",
 
 ggpairs(train_num)
 ggpairs(train_cate)
-
-
-##Modelling Decision Tree
-train.Model <- rpart(y ~., data=train, method="class")
-rpart.plot(train.Model, type=2, extra=4)
-Ynew.pred <- predict(train.Model, newdata=test, type="class")
-
-train.Model2 <- rpart(y~., data=train, method="class",
-                      control=rpart.control(minsplit=20, minbucket=round(minsplit/3),
-                                            maxdepth = 30, cp=0.01))
-
-
-#Bagging
-set.seed(2023)
-bagging <- randomForest(y~., data=train, mtry=4, ntree=200)
-#Random Forest
-set.seed(2023)
-rf <- randomForest(y~., data=train, ntree=200)
 
 
 
