@@ -1,0 +1,423 @@
+---
+title: "Group 03"
+author: "Calum Lawson, Savitha Sundaresan, Wenyu Qu, Yimeng Zhang, Yuezhu Guo"
+output:
+  pdf_document:
+    latex_engine: pdflatex
+    number_sections: no
+    keep_tex: true
+    #toc: true
+  html_document:
+    df_print: paged
+fig_caption: yes
+---
+
+\tableofcontents 
+\listoffigures
+\listoftables
+\newpage
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, eval = TRUE, warning = FALSE, message = FALSE, comment = NA)
+```
+
+```{r libraries} 
+# Load required libraries
+library(tidyverse)
+library(moderndive)
+library(skimr)
+library(kableExtra)
+library(gridExtra)
+library(gapminder)
+library(sjPlot)
+library(stats)
+library(jtools)
+library(ggplot2)
+library(GGally)
+library(dplyr)
+library(knitr)
+library(tidyr)
+library(readr)
+library(stringr)
+library(stargazer)
+library(AICcmodavg)
+```
+
+```{r data, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE}
+data <- read_csv("dataset3.csv") #Read the dataset
+data$Electricity <- factor(x = data$Electricity, levels = c(0,1), labels = c("No","Yes")) #Create labels for Electricity
+data = data[,-2] #Drop "Region" from the dataset
+```
+
+# Introduction {#sec:Intro}
+Understanding factors that could potentially influence the number of people living in a household is essential for researchers and policymakers to gain insights into the social and economic conditions of households in a country. In this study, we will analyze the household dataset from the FIES (Family Income and Expenditure Survey) of the Philippines. 
+
+We will examine which household-related variables influence the number of people living in a household, including total household income, total food expenditure, household head's sex and age, type of household, the total number of family members, house floor area, house age, number of bedrooms, and electricity. Since the "Region" is the same (i.e., X-Northern Mindanao) throughout the given dataset, we will drop the "Region" variable from the data frame. Using a Generalized Linear Model (GLM), we will identify which of these variables have a statistically significant relationship with the number of people living in a household.
+
+
+## Variables
+
+List of Variable are given in table \ref{tab:variables}
+
+```{r variables , echo=FALSE, results='asis'}
+#Creat a table of Variables and Description
+
+cat(' Table: \\label{tab:variables}Description of Variables
+  
+| Variable| Description|
+|-----|----------|
+|Total.Household.Income | Annual household income (in Philippine peso)|
+|Region | The region, X - Northern Mindanao of the Philippines|
+|Total.Food.Expenditure | Annual expenditure by the household on food (in Philippine peso)|
+|Household.Head.Sex | Head of the households sex|
+|Household.Head.Age | Head of the households age (in years)|
+|Type.of.Household | Relationship between the group of people living in the house|
+|Total.Number.of.Family.members | Number of people living in the house|
+|House.Floor.Area | Floor area of the house (in $m^2$)|
+|House.Age | Age of the building (in years)|
+|Number.of.bedrooms | Number of bedrooms in the house|
+|Electricity | Does the house have electricity? (1=Yes, 0=No)|')
+```
+
+Since we have the same region throughout the dataset, we will consider dropping the Region from the dataframe.
+
+\newpage
+# Exploratory Data Analysis {#sec:EDA}
+
+## Summary Statistics {#sec:summarystats}
+Summary is given in Table \ref{tab:summary}:
+```{r summary}
+#Summary Statistics
+kable(
+  list(summary(data[,1:3]), summary(data[,4:6]), summary(data[,7:10])),
+  caption = '\\label{tab:summary} Summary',
+  booktabs = TRUE,
+  digits = 2
+)%>%
+  kable_styling(font_size = 10, latex_options = "hold_position")
+```
+
+## Plots {#sec:plots}
+
+```{r histogram, fig.pos = "H", fig.align = "center", fig.cap="\\label{fig:histogram}Histogram"}
+#Histogram of the response variable
+ggplot(data = data, mapping = aes(x = Total.Number.of.Family.members), stat = count) +
+  geom_histogram()+
+  xlab("Number of people in the house") +
+  ylab("Count of households")
+```
+From Figure \ref{fig:histogram}, the histogram seems to be right skewed, suggesting that our variable under consideration, the number of people in a household is not normally distributed. Also, since the number of people is a count variable, Poisson regression will be a suitable fit. 
+
+
+
+```{r ggpairs, fig.pos = "H", fig.align = "center", fig.cap="\\label{fig:ggpairs}Scatterplot matrix", fig.height = 15, fig.width= 15}
+#Scatterplot matrix
+ggpairs(data[,c(6,1,2,4,7:9)], title="Scatterplot matrix",
+        upper=list(continuous=wrap("points", alpha=0.1)),
+        lower = list(continuous = wrap("cor", size = 7)),
+        axisLabels="none") 
+```
+
+
+```{r autocorr, fig.pos = "H", fig.align = "center", fig.cap="\\label{fig:autocorr}Autocorr", fig.height = 15, fig.width= 15}
+#Check for autocorrelation
+ggpairs(data[,c(1,2,4,7:9)], title="Autocorrelation",
+        upper="blank",
+        lower = list(continuous = wrap("cor", size = 7)),
+        axisLabels="none") 
+```
+From Figure \ref{fig:autocorr}, there seems to be a strong correlation between Total Income and Expenditure on Food. We might consider dropping one of these variables from the model.
+
+```{r boxplot, fig.pos = "H", fig.align = "center", fig.cap="\\label{fig:boxplot}Boxplot", fig.height = 15, fig.width= 15}
+#Crate a theme forboxplot with font size of labels
+My_Theme = theme(plot.title = element_text(size=25),
+                 axis.text=element_text(size=20),
+                 axis.title=element_text(size=20),
+                 legend.title = element_text(size=20),
+                 legend.text = element_text(size=20))
+#Boxplot of Total Number of Family Members against Household Head Sex
+p1 <- ggplot(data, mapping = aes(x = Household.Head.Sex, y = Total.Number.of.Family.members)) +
+  geom_boxplot(aes(fill = Household.Head.Sex) )+
+  labs(x = "Household Head Sex", y = "Total.Number.of.Family.members",
+       title = "Household Head Sex") + My_Theme
+
+#Boxplot of Total Number of Family Members against Type of Household
+p2 <- ggplot(data, mapping = aes(x = Type.of.Household, y = Total.Number.of.Family.members)) +
+  geom_boxplot(aes(fill = Type.of.Household)) +
+  labs(x = "Type.of.Household", y = "Total.Number.of.Family.members",
+       title = "Type of Household") +
+  scale_x_discrete(labels = c("Extended","Single", "Nonrelated")) + My_Theme
+
+#Boxplot of Total Number of Family Members against Type of Household
+p3 <- ggplot(data, mapping = aes(x = Electricity, y = Total.Number.of.Family.members)) +
+  geom_boxplot(aes(fill = Electricity)) +
+  labs(x = "Electricity", y = "Total.Number.of.Family.members",
+       title = "Electricity") + My_Theme
+
+grid.arrange(p1, p2, p3)
+```
+
+From the boxplots in Figure \ref{fig:boxplot}, 
+
+1. The median number of family members is higher in a household with a male head, than female head.
+
+2. The median number of family members in a Two or More Nonrelated Persons/Members household than Extended Family household. Also, the minimum number of family members in a Two or More Nonrelated Persons/Members household is equivalent to the median value of a single member household.
+
+3. The median value of the number of family members with no electricity is a bit higher than the number of members with electricity; though the spread seems to be the same.
+
+
+```{r type-sex, fig.pos = "H", fig.align = "center", fig.cap="\\label{fig:type-sex} Barplot of Type of Household and Household Head Sex"}
+
+#Proportion of Household Head Sex in each Household Type
+data %>%
+  group_by(Type.of.Household, Household.Head.Sex) %>% 
+  count() %>% 
+  group_by(Type.of.Household) %>% 
+  mutate(Proportion = n/sum(n)) %>%
+  ggplot(aes(x = Type.of.Household, y = Proportion, fill = Household.Head.Sex)) +
+  geom_bar(position = 'dodge', stat = 'identity') +
+  labs(y = "Proportion",
+       x = "Type.of.Household",
+       fill = "Household.Head.Sex") +
+  scale_x_discrete(labels = c("Extended","Single", "Nonrelated")) 
+```
+
+```{r prop1}
+#Proportion Table
+data %>%
+  group_by(Type.of.Household, Household.Head.Sex) %>% 
+  count() %>% 
+  group_by(Type.of.Household) %>% 
+  mutate(Proportion = n*100/sum(n)) %>% 
+  kable(caption = '\\label{tab:prop1} Proportion : Type of Household and Household Head Sex') %>%
+  kable_styling(font_size = 10, latex_options = "hold_position")
+```
+
+From the Barplot in Figure \ref{fig:type-sex}, overall, the proportion is higher for male household heads than females.
+
+```{r type-e, fig.pos = "H", fig.align = "center", fig.cap="\\label{fig:type-e} Barplot of Type of Household and Electricity"}
+#Proportion of Electricity in each Household
+data %>%
+  group_by(Type.of.Household, Electricity) %>% 
+  count() %>% 
+  group_by(Type.of.Household) %>% 
+  mutate(Proportion = n/sum(n)) %>%
+  ggplot(aes(x = Type.of.Household, y = Proportion, fill = Electricity)) +
+  geom_bar(position = 'dodge', stat = 'identity') +
+  labs(y = "Proportion",
+       x = "Type.of.Household",
+       fill = "Electricity") +
+  scale_x_discrete(labels = c("Extended","Single", "Nonrelated")) 
+```
+
+```{r prop2}
+#Proportion Table
+data %>%
+  group_by(Type.of.Household, Electricity) %>% 
+  count() %>% 
+  group_by(Type.of.Household) %>%  
+  mutate(Proportion = n*100/sum(n)) %>% 
+  kable(caption = '\\label{tab:prop2} Proportion : Type of Household and Electricity') %>%
+  kable_styling(font_size = 10, latex_options = "hold_position")
+```
+
+From the Barplot in Figure \ref{fig:type-e}, 
+
+1. Households with Two or More Nonrelated Persons/Members always have Electricity.
+
+2. Around 8% and 16% of the Extended family and Single family households have no electricity, respectively.
+
+```{r elec-sex, fig.pos = "H", fig.align = "center", fig.cap="\\label{fig:elect-sex} Barplot of Electricity and Househols Head Sex"}
+#Proportion of Household Head Sex in each Electricity Category
+data %>%
+  group_by(Electricity, Household.Head.Sex) %>% 
+  count() %>% 
+  group_by(Electricity) %>% 
+  mutate(Proportion = n/sum(n)) %>%
+  ggplot(aes(x = Electricity, y = Proportion, fill = Household.Head.Sex)) +
+  geom_bar(position = 'dodge', stat = 'identity') +
+  labs(y = "Proportion",
+       x = "Electricity",
+       fill = "Household.Head.Sex") 
+```
+
+```{r prop3}
+#Proportion Table
+data %>%
+  group_by(Electricity, Household.Head.Sex) %>% 
+  count() %>% 
+  group_by(Electricity) %>%  
+  mutate(Proportion = n*100/sum(n)) %>% 
+  kable(caption = '\\label{tab:prop3} Proportion : Electricity and Household Head Sex') %>%
+  kable_styling(font_size = 10, latex_options = "hold_position")
+```
+From the Barplot in Figure \ref{fig:elec-sex}, 
+
+1. Around 85% of households with no electricity have male heads.
+
+2. Around 78% of households with electricity have male heads.
+
+\newpage
+
+# Formal Data Analysis {#sec:FDA}
+
+## Logistic Regression {#sec:Logistic}
+We will model the data using Logistic Regression, by converting Total.Number.of.Family.members to a binary variable. We create a new variable, Members.bi and set it to 0 if Total.Number.of.Family.members less than or equal to 4 and 1 otherwise.
+```{r}
+ data = data %>%
+  #Create new column for logistic regression
+  mutate(Members.bi = ifelse(Total.Number.of.Family.members > 4, 1, 0)) %>%
+  #Change sole columns to factors
+  mutate(Household.Head.Sex = as.factor(Household.Head.Sex),
+         Type.of.Household = as.factor(Type.of.Household),
+         Electricity = as.factor(Electricity),
+         Total.Number.of.Family.members = as.factor(Total.Number.of.Family.members))
+```
+ 
+```{r logistic}
+#Logistic regression model with glm()
+mod = glm(Total.Number.of.Family.members ~ ., data = data, family = binomial(link = "logit"))
+
+coef(summary(mod)) %>% kable(caption = '\\label{tab:logistic}Logistic Model Coefficients') %>%
+  kable_styling(font_size = 10, latex_options = "hold_position")
+```
+
+## Poisson Regression {#sec:Poisson}
+```{r}
+data <- read_csv("dataset3.csv")
+data$Electricity <- factor(x = data$Electricity, levels = c(0,1), labels = c("No","Yes"))
+data = data[,-2]
+```
+
+```{r model1}
+#Main effects model
+model1 = glm(Total.Number.of.Family.members ~ ., family = poisson, data = data)
+#summ(model1)
+```
+
+```{r model2}
+#Updated from model 1 by dropping insignificant terms
+model2 <- glm(Total.Number.of.Family.members ~ . -House.Floor.Area -Number.of.bedrooms,
+             family = poisson, data = data)
+#summ(model2)
+```
+
+```{r model3}
+#two way interactions model
+model3 <- glm(Total.Number.of.Family.members ~ .*., family = poisson, data = data)
+#summ(model3)
+```
+
+```{r model4}
+#updated model 3
+model4 <- glm(Total.Number.of.Family.members ~ .*. -House.Age:Electricity -Total.Household.Income:House.Age
+             -Household.Head.Sex:Household.Head.Age -Total.Food.Expenditure:House.Floor.Area 
+             -House.Floor.Area:Electricity -Household.Head.Age:Type.of.Household 
+             -House.Age -House.Age:Number.of.bedrooms -Total.Household.Income:Type.of.Household 
+             -Type.of.Household:House.Age -Type.of.Household:Number.of.bedrooms 
+             -Household.Head.Sex:House.Floor.Area -House.Floor.Area 
+             -Type.of.Household:House.Floor.Area -Household.Head.Sex:Type.of.Household
+             -Total.Household.Income:House.Floor.Area -Total.Household.Income:Household.Head.Age 
+             -Electricity -Total.Household.Income:Household.Head.Sex -Household.Head.Sex:House.Age 
+             -House.Floor.Area:House.Age -Total.Household.Income:Electricity 
+             -Household.Head.Age:House.Floor.Area -Type.of.Household -Household.Head.Sex 
+             -Total.Food.Expenditure:Type.of.Household -Household.Head.Sex:Number.of.bedrooms 
+             -Type.of.Household:Electricity -Household.Head.Age:Number.of.bedrooms 
+             -Number.of.bedrooms:Electricity -Number.of.bedrooms -Total.Food.Expenditure:Number.of.bedrooms 
+             -Total.Food.Expenditure:House.Age,
+             family = poisson, data = data)
+#summ(model4)
+```
+
+For our initial analysis, Model 1, a main effects model was considered. Insignificant terms were dropped one by one based on p-value and arrived at Model 2. From Table \ref{tab:anova1}, Model 2 did not seem to fit the data better. So, Model 1 was preferred. 
+
+Model 3, with all two-way interactions, was considered along with Model 4 and Model 4 which were updated from Model 3.  
+
+
+```{r model5}
+#updated model 3
+model5 <- glm(Total.Number.of.Family.members ~ .*. -House.Age:Electricity -Total.Household.Income:House.Age
+             -Household.Head.Sex:Household.Head.Age -Total.Food.Expenditure:House.Floor.Area 
+             -House.Floor.Area:Electricity -Household.Head.Age:Type.of.Household 
+             -House.Age -House.Age:Number.of.bedrooms -Type.of.Household:House.Age 
+             -Household.Head.Sex:House.Age -House.Floor.Area:House.Age 
+             -Total.Food.Expenditure:House.Age --Household.Head.Age:House.Age
+             -Total.Household.Income:Type.of.Household -Type.of.Household
+             -Type.of.Household:Electricity -Total.Food.Expenditure:Type.of.Household
+             -Household.Head.Sex:Type.of.Household -Type.of.Household:House.Floor.Area
+             -Type.of.Household:Number.of.bedrooms -Total.Household.Income:Household.Head.Age 
+             -House.Floor.Area -Household.Head.Sex:House.Floor.Area 
+             -Total.Household.Income:House.Floor.Area -Household.Head.Age:House.Floor.Area
+             -House.Floor.Area:Number.of.bedrooms -Total.Household.Income:Household.Head.Sex
+             -Total.Household.Income:Electricity -Electricity -Number.of.bedrooms:Electricity
+             -Household.Head.Age:Electricity -Household.Head.Sex:Electricity
+             -Total.Food.Expenditure:Electricity -Household.Head.Sex:Number.of.bedrooms
+             -Household.Head.Age -Household.Head.Age:Number.of.bedrooms -Household.Head.Age:House.Age 
+             -Total.Food.Expenditure:Household.Head.Age -Number.of.bedrooms
+             -Total.Household.Income:Number.of.bedrooms -Total.Food.Expenditure:Number.of.bedrooms,
+             family = poisson, data = data)
+#summ(model5)
+coef(summary(model5)) %>% kable(caption = '\\label{tab:model5}Model 5 Coefficients') %>%
+  kable_styling(font_size = 10, latex_options = "hold_position")
+
+```
+
+
+```{r anova1}
+#Anova test comparison between model1 and model2
+anova(model1, model2, test = "Chisq") %>% kable(caption = '\\label{tab:anova1}Compare Model 1 and 2', digits = 2) %>%
+  kable_styling(font_size = 10, latex_options = "hold_position")
+```
+
+```{r anova2}
+#Anova test comparison between model1 and model3
+anova(model1, model3, test = "Chisq") %>% kable(caption = '\\label{tab:anova2}Compare Model 1 and 3', digits = 2) %>%
+  kable_styling(font_size = 10, latex_options = "hold_position")
+```
+
+```{r anova3}
+#Anova test comparison between model3 and model4
+anova(model3, model4, test = "Chisq") %>% kable(caption = '\\label{tab:anova3}Compare Model 3 and 4', digits = 2) %>%
+  kable_styling(font_size = 10, latex_options = "hold_position")
+```
+
+```{r anova4}
+#Anova test comparison between model4 and model5
+anova(model4, model5, test = "Chisq") %>% kable(caption = '\\label{tab:anova4}Compare Model 4 and 5', digits = 2) %>%
+  kable_styling(font_size = 10, latex_options = "hold_position")
+```
+From, Tables \ref{tab:anova2},\ref{tab:anova3} and \ref{tab:anova4}, Model 5 seemed to fit the data best.
+
+```{r confint}
+#Confidence Interval for model 5
+confint(model5) %>%
+  kable(caption = '\\label{tab:confit}Confidence Interval') %>%
+  kable_styling(latex_options = "hold_position")
+```
+
+From Table \ref{tab:model5} and  \ref{tab:confint}, we can see that the p-value are less than 0.05 and the confidence intervals do not contain 0. Therefore, all the variables in Model 5 are significant. 
+
+
+`r mod5 = model5$terms`
+
+Model 5 is given by:
+
+$log(`r names(model.frame(model5))[1]`) = `r coef(model5)[1]` \\+ `r coef(model5)[2]`\text{ }`r attr(mod5 , "term.labels")[1]` \\+ `r coef(model5)[3]`\text{ }`r attr(mod5 , "term.labels")[2]` \\+  `r coef(model5)[4]`\text{ }`r attr(mod5 , "term.labels")[3]` \\+  `r coef(model5)[5]`\text{ }`r attr(mod5 , "term.labels")[4]` \\+ `r coef(model5)[6]`\text{ }`r attr(mod5 , "term.labels")[5]`$
+
+
+\newpage
+# Conclusions {#sec:Conc}
+1. Significant variables are Income, Food Expenditure, and Household Head Sex.
+
+2. Households with male heads tend to have more members but lower associated increases with Food Expenditure.
+
+3. Households with higher incomes tend to have fewer members.
+
+4. Higher Household Food expenditure tends to indicate more members
+
+
+
+
+
+
+
