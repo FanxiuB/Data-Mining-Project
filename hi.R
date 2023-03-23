@@ -22,7 +22,8 @@ install.packages("rsample")  # install rsample package
 library(rsample)            # load rsample package
 
 ##Import data
-group12 <- read.csv('https://raw.githubusercontent.com/FanxiuB/Data-Mining-Project/main/DM-group_12.csv')
+group12 <- read.csv('https://raw.githubusercontent.com/FanxiuB/Data-Mining-Project/main/DM-group_12.csv',na.strings = "")
+group12 <- na.omit(group12)
 dim(group12)
 str(group12)
 
@@ -61,6 +62,7 @@ train_cate <- train[,c(2:10,15,21)]
 
 #eda
 str(group12)
+
 skim(group12)
 library(ggplot2)
 group12$y <- factor(group12$y)
@@ -83,6 +85,7 @@ ggplot(data = group12, aes(x = y, colour = month)) +
   geom_density()
 ggplot(group12, aes(x = y, colour = month)) +
   geom_boxplot()
+
 
 ggplot(data = group12, aes(x = month, colour = y)) + 
   geom_density()
@@ -133,10 +136,9 @@ ggplot(group12, aes(x=month, fill=y)) +
 ggplot(group12, aes(x=month, fill=y)) +
   geom_bar()
 
-#
-ggpairs(group12, columns=c(16,19), ggplot2::aes(colour=y, alpha=0.2))
-ggpairs(group12, columns=c(9,15), ggplot2::aes(colour=y, alpha=0.2))
-ggpairs(group12, columns=c(1,8), ggplot2::aes(colour=y, alpha=0.2))
+#Check the multicollinearity
+ggpairs(group12, columns=c(11,12,16:20), ggplot2::aes(colour=y, alpha=0.2))
+ggpairs(group12, columns=c(1:8), ggplot2::aes(colour=y, alpha=0.2))
 
 
 # Effect of different parameters in SVM
@@ -213,6 +215,13 @@ summary(SVM_RBF)
 #Build an SVM using the optimal kernel and parameters found in the above question and report the performance on test set.
 gamma.opt <- SVM_RBF$best.parameters[1]
 cost.opt <- SVM_RBF$best.parameters[2]
-SVM_final <- svm(y~duration+month, group12, type="C-classification", kernel="radial", gamma=gamma.opt, cost=cost.opt)
+SVM_final <- svm(y~marital+housing+duration+cons.price.idx+cons.conf.idx+campaign+emp.var.rate+age+job+education+month+contact+poutcome+previous, group12, type="C-classification", kernel="radial", gamma=gamma.opt, cost=cost.opt)
 test.pred <- predict(SVM_final,test)
 table(test$y,test.pred)
+
+
+
+
+
+
+
