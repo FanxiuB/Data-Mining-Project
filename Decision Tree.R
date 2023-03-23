@@ -71,8 +71,9 @@ valid.table[1,1]/sum(valid.table[1,]) #validation sensitivity
 valid.table[2,2]/sum(valid.table[2,]) #validation specificity
 (valid.table[1,1]+valid.table[2,2])/sum(valid.table) #validation accuracy
 
-Ynew.pred <- predict(train.Model, newdata=test, type="class");Ynew.pred
-test.table <- table(test[,16], Ynew.pred)
+#Model Justification
+Ynew.pred <- predict(train.Model, newdata=test, type="class")
+test.table <- table(test[,16], Ynew.pred);test.table
 test.table[1,1]/sum(test.table[1,]) #sensitivity
 test.table[2,2]/sum(test.table[2,]) #specificity
 (test.table[1,1]+test.table[2,2])/sum(test.table) #accuracy
@@ -115,6 +116,7 @@ valid.table[1,1]/sum(valid.table[1,]) #validation sensitivity
 valid.table[2,2]/sum(valid.table[2,]) #validation specificity
 (valid.table[1,1]+valid.table[2,2])/sum(valid.table) #Validation accuracy
 
+#Variable Importance
 randomForest::importance(rf)[, 1]
 rf_df <- data_frame(var = rownames(randomForest::importance(rf)),
                      MeanDecreaseGini = randomForest::importance(rf)[, 1]) %>%
@@ -128,8 +130,9 @@ rf_ggplot <- ggplot(rf_df, aes(var, MeanDecreaseGini)) +
         plot.subtitle = element_text(hjust = 0.5))
 rf_ggplot
 
-Ynew.pred <- predict(rf, newdata=test, type="class");Ynew.pred
-test.table <- table(test[,16], Ynew.pred)
+#Model Justification
+Ynew.pred <- predict(rf, newdata=test, type="class")
+test.table <- table(test[,16], Ynew.pred);test.table
 test.table[1,1]/sum(test.table[1,]) #sensitivity
 test.table[2,2]/sum(test.table[2,]) #specificity
 (test.table[1,1]+test.table[2,2])/sum(test.table) #accuracy
