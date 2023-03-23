@@ -9,6 +9,11 @@
 #install.packages("rpart.plot")
 #install.packages("randomForest")
 #install.packages("ROCR")
+#install.packages("plyr")
+#install.packages("forcats")
+#install.packages("caret")
+#install.packages("dplyr")
+#install.packages("tidyr")
 library(splitTools)
 library(corrplot)
 library(ggplot2)
@@ -19,10 +24,16 @@ library(rpart)
 library(rpart.plot)
 library(randomForest)
 library(ROCR)
-
+library(plyr)
+library(forcats)
+library(caret)
+library(dplyr)
+library(tidyr)
 
 ##Import data
-data <- read.csv('https://raw.githubusercontent.com/FanxiuB/Data-Mining-Project/main/DM-group_12.csv')
+data <- read.csv('https://raw.githubusercontent.com/FanxiuB/Data-Mining-Project/main/DM-group_12.csv', na.strings = "")
+print(colSums(is.na(data)))
+data <- na.omit(data)
 dim(data)
 str(data)
 
@@ -32,12 +43,12 @@ for(i in c(2:10,15)){
   print(class(data[,i]))
 }
 
-for(i in 1:10000){
-  if(data$y[i]=="no") 
-    data$y[i]=0
-  else data$y[i]=1
-}
-data$y <- as.numeric(data$y)
+#for(i in 1:10000){
+#  if(data$y[i]=="no") 
+#    data$y[i]=0
+#  else data$y[i]=1
+#}
+#data$y <- as.numeric(data$y)
 class(data$y)
 str(data)
 
@@ -99,6 +110,7 @@ default.y <- as.data.frame(table(train_cate$y, train_cate$default))
 colnames(default.y) <- c("y","default","number")
 ggplot(data = default.y, mapping = aes(x = default, y = number, fill=y)) +
   geom_col()
+#delete default
 
 table(train_cate$housing)
 housing.y <- as.data.frame(table(train_cate$y, train_cate$housing))
@@ -169,6 +181,7 @@ ggplot(data = train_num, aes(x = y, y = pdays, fill = y)) +
   geom_boxplot() +
   labs(x = "y", y = "pdays") +
   theme(legend.position = "none")
+#delete pdays
 
 ggplot(data = train_num, mapping = aes(x = previous, fill=y)) +
   geom_histogram(bins = 60, color = "white")
