@@ -89,7 +89,7 @@ for(i in 1:(n-1)){
   print(rf_train)    
 }
 rate     
-plot(rate)
+plot(rate, main="'mtry' Slection of Random Forset Model", xlab="value of mtry")
 
 #Select ntree
 set.seed(2023)
@@ -117,7 +117,7 @@ valid.table[2,2]/sum(valid.table[2,]) #validation specificity
 (valid.table[1,1]+valid.table[2,2])/sum(valid.table) #Validation accuracy
 
 #Variable Importance
-randomForest::importance(rf)[, 1]
+sort(randomForest::importance(rf)[, 1], decreasing=TRUE)
 rf_df <- data_frame(var = rownames(randomForest::importance(rf)),
                      MeanDecreaseGini = randomForest::importance(rf)[, 1]) %>%
   mutate(var = fct_reorder(var, MeanDecreaseGini, median))
