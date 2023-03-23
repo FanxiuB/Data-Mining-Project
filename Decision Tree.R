@@ -37,13 +37,11 @@ test <- data_tree[split$test, ]
 
 ##Modelling Classification Tree
 #Classification Tree
-set.seed(2023)
-
 minsplit=100
 positiveWeight = 1.0 / (nrow(subset(train, y == "yes")) / nrow(train))
 negativeWeight = 1.0 / (nrow(subset(train, y!= "yes")) / nrow(train))
 modelWeights <- ifelse(train$y== "yes", positiveWeight, negativeWeight)
-
+set.seed(2023)
 train.Model <- rpart(y ~., data=train, method="class", weights=modelWeights,
                      control=rpart.control(minsplit=100, minbucket=round(minsplit/3),
                                            maxdepth = 4, cp=0.015))        
