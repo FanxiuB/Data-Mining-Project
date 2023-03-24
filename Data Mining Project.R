@@ -14,6 +14,7 @@
 #install.packages("caret")
 #install.packages("dplyr")
 #install.packages("tidyr")
+#install.packages("gridExtra")
 library(splitTools)
 library(corrplot)
 library(ggplot2)
@@ -29,6 +30,7 @@ library(forcats)
 library(caret)
 library(dplyr)
 library(tidyr)
+library(gridExtra)
 
 ##Import data
 data <- read.csv('https://raw.githubusercontent.com/FanxiuB/Data-Mining-Project/main/DM-group_12.csv', na.strings = "")
@@ -84,70 +86,72 @@ table(train_cate$y) # %>% kable() #Add this part when transferring to RMarkdown
 y.freq <- table(train_cate$y)
 y.freq <- as.data.frame(y.freq)
 colnames(y.freq) <- c("y", "number")
-ggplot(data = y.freq, mapping = aes(x = y, y = number, fill=y)) +
-  geom_col()
+p0=ggplot(data = y.freq, mapping = aes(x = y, y = number, fill=y)) +
+  geom_col();p0
 
 table(train_cate$job)
 job.y <- as.data.frame(table(train_cate$y, train_cate$job))
 colnames(job.y) <- c("y","job","number")
-ggplot(data = job.y, mapping = aes(x = job, y = number, fill=y)) +
-  geom_col()
+p1=ggplot(data = job.y, mapping = aes(x = job, y = number, fill=y)) +
+  geom_col();p1
 
-table(train_cate$marital)
+atable(train_cate$marital)
 marital.y <- as.data.frame(table(train_cate$y, train_cate$marital))
 colnames(marital.y) <- c("y","marital","number")
-ggplot(data = marital.y, mapping = aes(x = marital, y = number, fill=y)) +
-  geom_col()
+p2=ggplot(data = marital.y, mapping = aes(x = marital, y = number, fill=y)) +
+  geom_col();p2
 
 table(train_cate$education)
 education.y <- as.data.frame(table(train_cate$y, train_cate$education))
 colnames(education.y) <- c("y","education","number")
-ggplot(data = education.y, mapping = aes(x = education, y = number, fill=y)) +
-  geom_col()
+p3=ggplot(data = education.y, mapping = aes(x = education, y = number, fill=y)) +
+  geom_col();p3
 
 table(train_cate$default)
 default.y <- as.data.frame(table(train_cate$y, train_cate$default))
 colnames(default.y) <- c("y","default","number")
-ggplot(data = default.y, mapping = aes(x = default, y = number, fill=y)) +
-  geom_col()
+p4=ggplot(data = default.y, mapping = aes(x = default, y = number, fill=y)) +
+  geom_col();p4
 #delete default
 
 table(train_cate$housing)
 housing.y <- as.data.frame(table(train_cate$y, train_cate$housing))
 colnames(housing.y) <- c("y","housing","number")
-ggplot(data = housing.y, mapping = aes(x = housing, y = number, fill=y)) +
-  geom_col()
+p5=ggplot(data = housing.y, mapping = aes(x = housing, y = number, fill=y)) +
+  geom_col();p5
 
 table(train_cate$loan)
 loan.y <- as.data.frame(table(train_cate$y, train_cate$loan))
 colnames(loan.y) <- c("y","loan","number")
-ggplot(data = loan.y, mapping = aes(x = loan, y = number, fill=y)) +
-  geom_col()
+p6=ggplot(data = loan.y, mapping = aes(x = loan, y = number, fill=y)) +
+  geom_col();p6
 
 table(train_cate$contact)
 contact.y <- as.data.frame(table(train_cate$y, train_cate$contact))
 colnames(contact.y) <- c("y","contact","number")
-ggplot(data = contact.y, mapping = aes(x = contact, y = number, fill=y)) +
-  geom_col()
+p7=ggplot(data = contact.y, mapping = aes(x = contact, y = number, fill=y)) +
+  geom_col();p7
 
 table(train_cate$month)
 month.y <- as.data.frame(table(train_cate$y, train_cate$month))
 colnames(month.y) <- c("y","month","number")
-ggplot(data = month.y, mapping = aes(x = month, y = number, fill=y)) +
-  geom_col()
+p8=ggplot(data = month.y, mapping = aes(x = month, y = number, fill=y)) +
+  geom_col();p8
 
 table(train_cate$day_of_week)
 day_of_week.y <- as.data.frame(table(train_cate$y, train_cate$day_of_week))
 colnames(day_of_week.y) <- c("y","day_of_week","number")
-ggplot(data = day_of_week.y, mapping = aes(x = day_of_week, y = number, fill=y)) +
-  geom_col()
+p9=ggplot(data = day_of_week.y, mapping = aes(x = day_of_week, y = number, fill=y)) +
+  geom_col();p9
 
 table(train_cate$poutcome)
 poutcome.y <- as.data.frame(table(train_cate$y, train_cate$poutcome))
 colnames(poutcome.y) <- c("y","poutcome","number")
-ggplot(data = poutcome.y, mapping = aes(x = poutcome, y = number, fill=y)) +
-  geom_col()
-
+p10=ggplot(data = poutcome.y, mapping = aes(x = poutcome, y = number, fill=y)) +
+  geom_col();p10
+dev.new()
+grid.arrange(p0, p1, ncol=2)
+grid.arrange(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, ncol=2)
 
 #EDA of Numerical Variables
 describe(train_num[,-11])
